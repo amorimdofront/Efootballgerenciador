@@ -286,12 +286,16 @@ function App() {
                 </div>
               )}
 
+              {/* LISTA LATERAL DE TIMES (Com Responsável) */}
               <div className="bg-[#111] p-5 rounded-xl border border-gray-800">
                 <h4 className="font-bold mb-4 text-xs uppercase text-gray-400 italic">Times ({times.length})</h4>
                 {times.map(t => (
                   <div key={t.id} className="flex items-center p-2 mb-2 bg-[#0a0a0a] rounded border border-gray-800">
-                    {t.escudo_url ? <img src={t.escudo_url} className="w-6 h-6 rounded-full mr-3 object-cover" alt="escudo" /> : <div className="w-6 h-6 bg-gray-700 rounded-full mr-3" />}
-                    <span className="text-sm font-bold truncate">{t.nome}</span>
+                    {t.escudo_url ? <img src={t.escudo_url} className="w-8 h-8 rounded-full mr-3 object-cover border border-gray-700" alt="escudo" /> : <div className="w-8 h-8 bg-gray-800 rounded-full mr-3 border border-gray-700 flex-shrink-0" />}
+                    <div className="flex flex-col truncate">
+                      <span className="text-sm font-bold truncate text-white">{t.nome}</span>
+                      <span className="text-[9px] text-gray-500 uppercase">{t.jogador_responsavel || 'S/ Responsável'}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -395,6 +399,7 @@ function App() {
                 </div>
               )}
 
+              {/* TABELA DE CLASSIFICAÇÃO (Com Responsável) */}
               {activeTab === 'tabela' && (
                 <div className="bg-[#111] rounded-xl border border-gray-800 overflow-hidden">
                   <table className="w-full text-left">
@@ -405,9 +410,12 @@ function App() {
                       {calcularClassificacao().map((t, i) => (
                         <tr key={t.id} className={`border-b border-gray-800 hover:bg-black transition ${i < limiteClassificados && campeonatoAtivo?.formato === 'pontos-corridos-mata-mata' ? 'bg-[#00ff8505]' : ''}`}>
                           <td className={`p-4 font-black italic ${i < limiteClassificados && campeonatoAtivo?.formato === 'pontos-corridos-mata-mata' ? 'text-[#00ff85]' : 'text-gray-500'}`}>{i+1}º</td>
-                          <td className="p-4 flex items-center gap-3 font-bold uppercase text-xs">
-                            {t.escudo_url && <img src={t.escudo_url} className="w-6 h-6 rounded-full object-cover" alt="escudo" />}
-                            {t.nome}
+                          <td className="p-4 flex items-center gap-3">
+                            {t.escudo_url ? <img src={t.escudo_url} className="w-8 h-8 rounded-full object-cover border border-gray-700" alt="escudo" /> : <div className="w-8 h-8 bg-gray-800 rounded-full border border-gray-700 flex-shrink-0" />}
+                            <div className="flex flex-col truncate">
+                              <span className="font-bold uppercase text-xs text-white">{t.nome}</span>
+                              <span className="text-[9px] text-gray-500 uppercase">{t.jogador_responsavel || 'S/ Responsável'}</span>
+                            </div>
                           </td>
                           <td className="p-4 text-center font-black text-[#00ff85] text-lg">{t.p}</td>
                           <td className="p-4 text-center text-gray-500">{t.j}</td>
