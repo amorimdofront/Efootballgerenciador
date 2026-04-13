@@ -127,6 +127,23 @@ function App() {
     carregarDadosCampeonato(campeonatoAtivo);
   };
 
+  // NOVA FUNÇÃO: Remover Time
+  const removerTime = async (timeId) => {
+    if (!window.confirm("ATENÇÃO: Tem certeza que deseja remover este time?\n\nSe já houver jogos gerados, recomendamos clicar em 'REGERAR JOGOS' logo após excluir o time para não quebrar a tabela.")) return;
+    
+    // Primeiro tentamos remover as partidas onde este time aparece (para evitar erro de chave estrangeira)
+    await supabase.from('partidas').delete().or(`time_casa_id.eq.${timeId},time_fora_id.eq.${timeId}`);
+    
+    // Agora exclui o time
+    const { error } = await supabase.from('times').delete().eq('id', timeId);
+    
+    if (!error) {
+      carregarDadosCampeonato(campeonatoAtivo);
+    } else {
+      alert("Erro ao remover o time. Verifique o banco de dados.");
+    }
+  };
+
   const gerarTabelaJogos = async () => {
     await supabase.from('partidas').delete().eq('campeonato_id', campeonatoAtivo.id);
     let ts = [...times];
@@ -286,16 +303,29 @@ function App() {
                 </div>
               )}
 
-              {/* LISTA LATERAL DE TIMES (Com Responsável) */}
+              {/* LISTA LATERAL DE TIMES (Com opção de Remover) */}
               <div className="bg-[#111] p-5 rounded-xl border border-gray-800">
                 <h4 className="font-bold mb-4 text-xs uppercase text-gray-400 italic">Times ({times.length})</h4>
                 {times.map(t => (
-                  <div key={t.id} className="flex items-center p-2 mb-2 bg-[#0a0a0a] rounded border border-gray-800">
-                    {t.escudo_url ? <img src={t.escudo_url} className="w-8 h-8 rounded-full mr-3 object-cover border border-gray-700" alt="escudo" /> : <div className="w-8 h-8 bg-gray-800 rounded-full mr-3 border border-gray-700 flex-shrink-0" />}
-                    <div className="flex flex-col truncate">
-                      <span className="text-sm font-bold truncate text-white">{t.nome}</span>
-                      <span className="text-[9px] text-gray-500 uppercase">{t.jogador_responsavel || 'S/ Responsável'}</span>
+                  <div key={t.id} className="flex items-center justify-between p-2 mb-2 bg-[#0a0a0a] rounded border border-gray-800 group">
+                    <div className="flex items-center overflow-hidden">
+                      {t.escudo_url ? <img src={t.escudo_url} className="w-8 h-8 rounded-full mr-3 object-cover border border-gray-700" alt="escudo" /> : <div className="w-8 h-8 bg-gray-800 rounded-full mr-3 border border-gray-700 flex-shrink-0" />}
+                      <div className="flex flex-col truncate">
+                        <span className="text-sm font-bold truncate text-white">{t.nome}</span>
+                        <span className="text-[9px] text-gray-500 uppercase">{t.jogador_responsavel || 'S/ Responsável'}</span>
+                      </div>
                     </div>
+                    
+                    {/* BOTÃO REMOVER TIME (X) */}
+                    {canEdit && (
+                      <button 
+                        onClick={() => removerTime(t.id)} 
+                        className="text-red-500 hover:bg-red-500 hover:text-white w-6 h-6 rounded flex items-center justify-center font-bold text-xs opacity-0 group-hover:opacity-100 transition-all"
+                        title="Remover Time"
+                      >
+                        X
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -309,8 +339,22 @@ function App() {
                 </div>
                 {canEdit && (
                   <div className="flex gap-2">
-                    {partidas.length === 0 && times.length > 1 && <button onClick={gerarTabelaJogos} className="bg-white text-black px-4 py-2 rounded-full font-bold text-xs">GERAR JOGOS</button>}
+                    {/* Botão original de Gerar Jogos */}
+                    {partidas.length === 0 && times.length > 1 && (
+                      <button onClick={gerarTabelaJogos} className="bg-white text-black px-4 py-2 rounded-full font-bold text-xs">GERAR JOGOS</button>
+                    )}
                     
+                    {/* NOVO BOTÃO: REGERAR JOGOS (Visível se já existirem partidas) */}
+                    {partidas.length > 0 && (
+                      <button onClick={() => {
+                        if(window.confirm("🚨 PERIGO: Isso vai apagar TODOS os placares atuais e fará um novo sorteio do zero. Deseja continuar?")) {
+                          gerarTabelaJogos();
+                        }
+                      }} className="bg-red-600/20 text-red-500 border border-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition">
+                        REGERAR JOGOS
+                      </button>
+                    )}
+
                     {campeonatoAtivo?.formato === 'pontos-corridos-mata-mata' && partidas.length > 0 && !mataMataIniciado && (
                       <button onClick={gerarMataMata} className="bg-[#00ff85] text-black px-4 py-2 rounded-full font-bold text-xs">GERAR MATA-MATA</button>
                     )}
@@ -399,7 +443,7 @@ function App() {
                 </div>
               )}
 
-              {/* TABELA DE CLASSIFICAÇÃO (Com Responsável) */}
+              {/* TABELA DE CLASSIFICAÇÃO */}
               {activeTab === 'tabela' && (
                 <div className="bg-[#111] rounded-xl border border-gray-800 overflow-hidden">
                   <table className="w-full text-left">
